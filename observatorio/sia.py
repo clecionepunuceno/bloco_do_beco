@@ -62,6 +62,7 @@ def aplicar_filtros(ubs_selecionadas, anos_selecionados):
 # -----------------------------------------------------------
 app = Dash(__name__)
 app.title = "Produção SIA — Evolução de Procedimentos"
+server = app.server   # <-- linha nova aqui, nível principal do arquivo
 
 ESTILO_CARD = {
     "background": "#ffffff", "borderRadius": "12px", "padding": "20px",
@@ -277,6 +278,6 @@ def atualizar_small_multiples(ubs_selecionadas, anos_selecionados, top_n):
     fig.update_xaxes(showticklabels=False)
     return fig
 
-
+# no final do arquivo:
 if __name__ == "__main__":
-    server = app.server
+    app.run(debug=False)

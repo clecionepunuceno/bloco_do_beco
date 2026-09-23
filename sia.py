@@ -135,7 +135,7 @@ app.layout = html.Div(
                 ),
                 html.H1("Evolução de Procedimentos SUS", style={
                     "fontFamily": FONTE_TITULO, "fontWeight": "700", "fontSize": "40px", "margin": "0",
-                    "background": f"linear-gradient(90deg, {AZUL_ACO}, {TERRACOTA})",
+                    "background": f"linear-gradient(90deg, {TERRACOTA})",
                     "WebkitBackgroundClip": "text", "WebkitTextFillColor": "transparent",
                     "backgroundClip": "text",
                 }),

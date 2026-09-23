@@ -9,13 +9,13 @@ from dash import Dash, dcc, html, Input, Output
 # Paleta e tokens
 # -----------------------------------------------------------
 AZUL_ACO = "#4A5B79"
+AZUL_ESCURO = "#2F3B52"
 TERRACOTA = "#A05D22"
+TERRACOTA_CLARO = "#F3E3D3"
 DOURADO = "#CEAD63"
 CREME = "#FAF7F2"
 TEXTO = "#2D2A26"
 TEXTO_SUAVE = "#8A8378"
-TERRACOTA_CLARO = "#F3E3D3"  # versão clara da terracota, pro fundo do 3º card
-AZUL_ESCURO = "#2F3B52"
 PALETA_LINHAS = [AZUL_ACO, TERRACOTA, DOURADO, "#7A8B6F", "#8C6E5A", "#5C7A8A", "#B08968", "#3F5765"]
 
 # -----------------------------------------------------------
@@ -26,6 +26,7 @@ df["COMPETENCIA"] = df["ANO"].astype(str) + "-" + df["MES"].astype(str).str.zfil
 
 lista_ubs = sorted(df["NOME_ESTABELECIMENTO"].dropna().unique())
 lista_anos = sorted(df["ANO"].dropna().unique().tolist())
+lista_procedimentos = sorted(df["NO_PROCEDIMENTO"].dropna().unique())
 
 UBS_PADRAO = ["UBS NOVO CAMINHO", "UBS VILA DAS BELEZAS ALBERTO AMBROSIO"]
 ubs_padrao_validas = [u for u in UBS_PADRAO if u in lista_ubs]
@@ -47,12 +48,14 @@ def abreviar(texto, limite=35):
     return texto[:limite].rsplit(" ", 1)[0] + "…"
 
 
-def aplicar_filtros(ubs_selecionadas, anos_selecionados):
+def aplicar_filtros(ubs_selecionadas, anos_selecionados, procedimentos_selecionados=None):
     dados = df.copy()
     if ubs_selecionadas:
         dados = dados[dados["NOME_ESTABELECIMENTO"].isin(ubs_selecionadas)]
     if anos_selecionados:
         dados = dados[dados["ANO"].isin(anos_selecionados)]
+    if procedimentos_selecionados:
+        dados = dados[dados["NO_PROCEDIMENTO"].isin(procedimentos_selecionados)]
     return dados
 
 
@@ -120,24 +123,25 @@ app.layout = html.Div(
     style={"fontFamily": FONTE_CORPO, "background": CREME, "minHeight": "100vh"},
     children=[
 
-        # ---------- Hero ----------
-               # ---------- Cabeçalho ----------
+        # ---------- Cabeçalho ----------
         html.Div(
             style={"maxWidth": "1200px", "margin": "0 auto", "padding": "44px 32px 20px"},
             children=[
-                html.Div(
-                    "SIA-SUS",
-                    style={
+                html.Div(style={"display": "flex", "gap": "8px", "marginBottom": "12px"}, children=[
+                    html.Div("SIA-SUS", style={
                         "display": "inline-block", "background": DOURADO, "color": TEXTO,
                         "fontFamily": FONTE_TITULO, "fontWeight": "600", "fontSize": "12px",
-                        "padding": "4px 12px", "borderRadius": "999px", "marginBottom": "12px",
-                    },
-                ),
+                        "padding": "4px 12px", "borderRadius": "999px",
+                    }),
+                    html.Div("MVP — versão piloto", style={
+                        "display": "inline-block", "background": "transparent", "color": TEXTO_SUAVE,
+                        "fontFamily": FONTE_CORPO, "fontWeight": "500", "fontSize": "12px",
+                        "padding": "4px 12px", "border": f"1px solid {TEXTO_SUAVE}", "borderRadius": "999px",
+                    }),
+                ]),
                 html.H1("Evolução de Procedimentos SUS", style={
                     "fontFamily": FONTE_TITULO, "fontWeight": "700", "fontSize": "40px", "margin": "0",
-                    "background": f"linear-gradient(90deg, {TERRACOTA})",
-                    "WebkitBackgroundClip": "text", "WebkitTextFillColor": "transparent",
-                    "backgroundClip": "text",
+                    "color": AZUL_ACO,
                 }),
                 html.P("Como a produção variou no tempo e quais procedimentos mais mudaram",
                        style={"color": TEXTO_SUAVE, "fontSize": "15px", "marginTop": "8px", "marginBottom": "0"}),
@@ -146,7 +150,7 @@ app.layout = html.Div(
 
         html.Div(style={"maxWidth": "1200px", "margin": "0 auto", "padding": "0 32px 48px"}, children=[
 
-                        # ---------- KPIs ----------
+            # ---------- KPIs ----------
             html.Div(style={"display": "flex", "gap": "16px", "flexWrap": "wrap", "marginBottom": "24px"}, children=[
                 kpi_card("kpi-total", "Quantidade de procedimentos realizados",
                          f"linear-gradient(135deg, {AZUL_ESCURO}, {AZUL_ACO})", "#ffffff"),
@@ -195,6 +199,17 @@ app.layout = html.Div(
                                 value=lista_anos, inline=True,
                                 style={"marginTop": "10px"},
                                 inputStyle={"marginRight": "5px", "marginLeft": "10px"},
+                            ),
+                        ]),
+                        html.Div(style={"flex": "2", "minWidth": "280px"}, children=[
+                            html.Label("Procedimento(s)", style={
+                                "fontFamily": FONTE_TITULO, "fontWeight": "600", "color": TEXTO, "fontSize": "14px",
+                            }),
+                            dcc.Dropdown(
+                                id="filtro-procedimento",
+                                options=[{"label": p, "value": p} for p in lista_procedimentos],
+                                value=[], multi=True,
+                                placeholder="Todos os procedimentos (deixe em branco para não filtrar)",
                             ),
                         ]),
                     ]),
@@ -260,10 +275,12 @@ app.layout = html.Div(
     Output("kpi-total", "children"),
     Output("kpi-estabelecimentos", "children"),
     Output("kpi-procedimentos-distintos", "children"),
-    Input("filtro-ubs", "value"), Input("filtro-ano", "value"),
+    Input("filtro-ubs", "value"),
+    Input("filtro-ano", "value"),
+    Input("filtro-procedimento", "value"),
 )
-def atualizar_kpis(ubs_selecionadas, anos_selecionados):
-    dados = aplicar_filtros(ubs_selecionadas, anos_selecionados)
+def atualizar_kpis(ubs_selecionadas, anos_selecionados, procedimentos_selecionados):
+    dados = aplicar_filtros(ubs_selecionadas, anos_selecionados, procedimentos_selecionados)
     if dados.empty:
         return "0", "0", "0"
     total = f"{dados['QTD_APROVADA'].sum():,.0f}".replace(",", ".")
@@ -274,10 +291,12 @@ def atualizar_kpis(ubs_selecionadas, anos_selecionados):
 
 @app.callback(
     Output("grafico-tendencia-geral", "figure"),
-    Input("filtro-ubs", "value"), Input("filtro-ano", "value"),
+    Input("filtro-ubs", "value"),
+    Input("filtro-ano", "value"),
+    Input("filtro-procedimento", "value"),
 )
-def atualizar_tendencia_geral(ubs_selecionadas, anos_selecionados):
-    dados = aplicar_filtros(ubs_selecionadas, anos_selecionados)
+def atualizar_tendencia_geral(ubs_selecionadas, anos_selecionados, procedimentos_selecionados):
+    dados = aplicar_filtros(ubs_selecionadas, anos_selecionados, procedimentos_selecionados)
     if dados.empty:
         return go.Figure()
     meses = competencias_completas(dados)
@@ -309,10 +328,13 @@ def atualizar_tendencia_geral(ubs_selecionadas, anos_selecionados):
 
 @app.callback(
     Output("grafico-ranking-impacto", "figure"),
-    Input("filtro-ubs", "value"), Input("filtro-ano", "value"), Input("top-n", "value"),
+    Input("filtro-ubs", "value"),
+    Input("filtro-ano", "value"),
+    Input("filtro-procedimento", "value"),
+    Input("top-n", "value"),
 )
-def atualizar_ranking(ubs_selecionadas, anos_selecionados, top_n):
-    dados = aplicar_filtros(ubs_selecionadas, anos_selecionados)
+def atualizar_ranking(ubs_selecionadas, anos_selecionados, procedimentos_selecionados, top_n):
+    dados = aplicar_filtros(ubs_selecionadas, anos_selecionados, procedimentos_selecionados)
     if dados.empty:
         return go.Figure()
     meses = competencias_completas(dados)
@@ -343,10 +365,13 @@ def atualizar_ranking(ubs_selecionadas, anos_selecionados, top_n):
 
 @app.callback(
     Output("grafico-small-multiples", "figure"),
-    Input("filtro-ubs", "value"), Input("filtro-ano", "value"), Input("top-n", "value"),
+    Input("filtro-ubs", "value"),
+    Input("filtro-ano", "value"),
+    Input("filtro-procedimento", "value"),
+    Input("top-n", "value"),
 )
-def atualizar_small_multiples(ubs_selecionadas, anos_selecionados, top_n):
-    dados = aplicar_filtros(ubs_selecionadas, anos_selecionados)
+def atualizar_small_multiples(ubs_selecionadas, anos_selecionados, procedimentos_selecionados, top_n):
+    dados = aplicar_filtros(ubs_selecionadas, anos_selecionados, procedimentos_selecionados)
     if dados.empty:
         return go.Figure()
     meses = competencias_completas(dados)
@@ -387,5 +412,4 @@ def atualizar_small_multiples(ubs_selecionadas, anos_selecionados, top_n):
 
 
 if __name__ == "__main__":
-    #app.run(debug=True, port=8050)
     app.run(debug=False)

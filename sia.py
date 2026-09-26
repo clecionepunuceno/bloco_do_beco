@@ -74,7 +74,7 @@ def calcular_impacto(dados, meses_completos):
 app = Dash(__name__)
 app.title = "Produção SIA — Evolução de Procedimentos"
 server = app.server
-
+#<script defer src="https://cloud.umami.is/script.js" data-website-id="e0ff9371-bdda-4ed2-8053-cdadf6810810"></script>
 app.index_string = """
 <!DOCTYPE html>
 <html>
@@ -91,6 +91,7 @@ app.index_string = """
             .stat-card { transition: transform 0.15s ease; }
             .stat-card:hover { transform: translateY(-2px); }
         </style>
+        <script defer src="https://cloud.umami.is/script.js" data-website-id="<script defer src="https://cloud.umami.is/script.js" data-website-id="e0ff9371-bdda-4ed2-8053-cdadf6810810"></script>"></script>
     </head>
     <body>
         {%app_entry%}
